@@ -49,4 +49,4 @@ jobs:
 
             - name: Run Tests
               run: |
-                  bash tests/run-tests.sh
+                  cd tests && ./run-tests.sh
