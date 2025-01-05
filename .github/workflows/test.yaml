@@ -19,10 +19,19 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
 
-            - name: Install Docker Compose
+            # Cache Docker Compose
+            - name: Cache Docker Compose
+              id: cache-compose
+              uses: actions/cache@v3
+              with:
+                  path: /usr/local/bin/docker-compose
+                  key: compose-${{ runner.os }}-v2.19.1
+
+            - name: Install Docker Compose (if not cached)
+              if: steps.cache-compose.outputs.cache-hit != 'true'
               run: |
-                  sudo apt-get update
-                  sudo apt-get install -y docker-compose
+                  sudo curl -L "https://github.com/docker/compose/releases/download/v2.19.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+                  sudo chmod +x /usr/local/bin/docker-compose
 
             - name: Create .env File
               run: |
