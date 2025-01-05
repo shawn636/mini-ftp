@@ -1,0 +1,13 @@
+server:
+    address: mini-ftp.duckdns.org
+    min_port: 22030
+    max_port: 22039
+    tls_cert: /ssl/live/mini-ftp.duckdns.org/fullchain.pem
+    tls_key: /ssl/live/mini-ftp.duckdns.org/privkey.pem
+
+users:
+    - username: user1
+      password_env: CONFIG_ONLY_SSL_TEST_USER1_PASS
+
+    - username: user2
+      password_env: CONFIG_ONLY_SSL_TEST_USER2_PASS

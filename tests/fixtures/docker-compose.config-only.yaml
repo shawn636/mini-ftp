@@ -1,0 +1,19 @@
+services:
+  ftp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+
+    ports:
+      - "2123:21"
+      - "22020-22029:22020-22029"
+    environment:
+      - CONFIG_FILE=/etc/ftp/config.yaml
+      - LOG_LEVEL=DEBUG
+    env_file:
+      - path: .env
+        required: true
+    volumes:
+      - ./config.yaml:/etc/ftp/config.yaml

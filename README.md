@@ -1,3 +1,5 @@
+![logo](/Users/shawnlong/Repos/Personal/mini-ftp/assets/logo.png)
+
 # mini-ftp
 
 A lightweight FTP server with support for YAML-based configuration and secure password handling.
@@ -82,6 +84,12 @@ services:
 
 - `FTP_GID` – Group ID for the default user (optional, default 1000).
 
+#### TLS Settings
+
+- `TLS_CERT` - Path to the TLS certificate file. Enables FTPS if set.
+- `TLS_KEY` - Path to the TLS private key file. Required if `TLS_CERT` is set.
+- `TLS_TIMEOUT` - Timeout (in seconds) to wait for TLS cert/key to appear (default: )
+
 
 
 ## YAML Config File
@@ -94,13 +102,14 @@ For advanced setups with multiple users and server settings, you can use a YAML 
 
 #### Server Settings
 
-| Key        | Description                                                  | Required | Default                     |
-| ---------- | ------------------------------------------------------------ | -------- | --------------------------- |
-| `address`  | External address for passive ports (should resolve to server's IP). | No       | Derived from container's IP |
-| `min_port` | Minimum port number for passive connections                  | No       | 21000                       |
-| `max_port` | Maximum port number for passive connections                  | No       | 21010                       |
-| `tls_cert` | The **path** to the TLS certificate file for enabling encrypted connections. | No       | None                        |
-| `tls_key`  | The **path** to the TLS private key file for enabling encrypted connections. | No       | None                        |
+| Key           | Description                                                  | Required | Default                     |
+| ------------- | ------------------------------------------------------------ | -------- | --------------------------- |
+| `address`     | External address for passive ports (should resolve to server's IP). | No       | Derived from container's IP |
+| `min_port`    | Minimum port number for passive connections                  | No       | 21000                       |
+| `max_port`    | Maximum port number for passive connections                  | No       | 21010                       |
+| `tls_cert`    | The **path** to the TLS certificate file for enabling encrypted connections. | No       | None                        |
+| `tls_key`     | The **path** to the TLS private key file for enabling encrypted connections. | No       | None                        |
+| `tls_timeout` | Timeout (in seconds) to wait for TLS cert and key to appear  | No       | 120                          |
 
 **Note**: If `tls_cert` and `tls_key` are both provided, SFTP is automatically enabled.
 

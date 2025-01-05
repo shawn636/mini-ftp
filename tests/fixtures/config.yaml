@@ -1,0 +1,8 @@
+server:
+    address: 127.0.0.1
+    min_port: 22020
+    max_port: 22029
+
+users:
+    - username: user
+      password_env: CONFIG_ONLY_TEST_USER_PASS

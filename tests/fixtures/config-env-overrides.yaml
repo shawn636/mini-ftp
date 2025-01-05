@@ -1,0 +1,11 @@
+server:
+    address: 127.0.0.1
+    min_port: 22040
+    max_port: 22049
+
+users:
+    - username: user1
+      password_env: ENV_OVERRIDE_TEST_USER1_PASS
+
+    - username: user2
+      password_env: ENV_OVERRIDE_TEST_USER2_PASS

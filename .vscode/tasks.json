@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Tests (Alpine Latest)",
+            "type": "shell",
+            "command": "bash tests/run-tests.sh --alpine-latest",
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "detail": "Run tests with default Alpine version 'latest'",
+            "icon": {
+                "id": "run",
+                "color": "terminal.ansiMagenta"
+            }
+        },
+        {
+            "label": "Run All Tests (Alpine Versions)",
+            "type": "shell",
+            "command": "bash tests/run-tests.sh",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "icon": {
+                "id": "run-all",
+                "color": "terminal.ansiBlue"
+            },
+            "problemMatcher": [],
+            "detail": "Run tests with multiple Alpine versions (3.19, 3.20, 3.21, latest) using the run-tests.sh script"
+        }
+    ]
+}
