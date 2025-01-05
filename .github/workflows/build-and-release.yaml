@@ -1,25 +1,27 @@
-name: Auto Build, Push, and Release
+name: Build, Push, and Release
 
 on:
+    push:
+        branches:
+            - main
     schedule:
         - cron: "0 0 * * 1" # Weekly build
-    workflow_dispatch: # Allows manual triggering from GitHub UI
+    workflow_dispatch: # Manual trigger
 
 env:
     IMAGE_NAME: shawnlong636/mini-ftp
     MINORS_TO_KEEP: 3
 
 jobs:
-    auto-update:
+    build-and-release:
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
-            # Bump Version
             - name: Bump Version
-              id: version_bump # <-- Add an ID to refer to outputs
+              id: version_bump
               run: |
                   VERSION_FILE="VERSION"
                   if [ ! -f "$VERSION_FILE" ]; then
@@ -31,9 +33,8 @@ jobs:
                   new_version="$major.$minor.$new_patch"
                   echo $new_version > $VERSION_FILE
                   echo "VERSION=$new_version" >> $GITHUB_ENV
-                  echo "version=$new_version" >> $GITHUB_OUTPUT # <-- Outputs it for later use
+                  echo "version=$new_version" >> $GITHUB_OUTPUT
 
-            # Commit Version Update
             - name: Commit Version Update
               run: |
                   git config --global user.name "github-actions[bot]"
@@ -42,7 +43,6 @@ jobs:
                   git commit --no-verify -m "Bump version to ${{ steps.version_bump.outputs.version }}"
                   git push
 
-            # Setup QEMU and Buildx
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v2
 
@@ -61,7 +61,6 @@ jobs:
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
 
-            # Generate Environment File
             - name: Create .env File
               run: |
                   echo "Generating .env file..."
@@ -76,7 +75,6 @@ jobs:
                   ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
                   EOF
 
-            # Fetch Alpine Versions
             - name: Fetch Latest Alpine Versions
               id: fetch_versions
               run: |
@@ -84,15 +82,13 @@ jobs:
                   VERSIONS=$(curl -s https://registry.hub.docker.com/v2/repositories/library/alpine/tags | jq -r '.results[].name' | grep -E '^3\.[0-9]+$' | sort -V | tail -n $MINORS_TO_KEEP)
                   echo "ALPINE_VERSIONS=$VERSIONS" >> $GITHUB_ENV
 
-            # Build and Push Docker Images
             - name: Build and Push Docker Images
               run: |
-                  VERSION=${{ steps.version_bump.outputs.version }} # <-- Use output instead
+                  VERSION=${{ steps.version_bump.outputs.version }}
                   for ALPINE_VERSION in $ALPINE_VERSIONS; do
                     TAG_VERSION="${VERSION}-alpine-${ALPINE_VERSION}"
                     echo "Building and pushing image for Alpine $ALPINE_VERSION..."
 
-                    # Build and push to Docker Hub
                     docker buildx build \
                       --build-arg ALPINE_VERSION=$ALPINE_VERSION \
                       --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
@@ -103,7 +99,6 @@ jobs:
                       --tag ${{ env.IMAGE_NAME }}:${VERSION}-alpine-latest \
                       --push .
 
-                    # Tag the repo
                     git tag $TAG_VERSION
                     git push origin $TAG_VERSION
                   done
