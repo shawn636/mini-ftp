@@ -1,0 +1,109 @@
+name: Auto Build, Push, and Release
+
+on:
+    schedule:
+        - cron: "0 0 * * 1" # Weekly build
+    workflow_dispatch: # Allows manual triggering from GitHub UI
+
+env:
+    IMAGE_NAME: shawnlong636/mini-ftp
+    MINORS_TO_KEEP: 3
+
+jobs:
+    auto-update:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            # Bump Version
+            - name: Bump Version
+              id: version_bump # <-- Add an ID to refer to outputs
+              run: |
+                  VERSION_FILE="VERSION"
+                  if [ ! -f "$VERSION_FILE" ]; then
+                    echo "1.0.0" > $VERSION_FILE
+                  fi
+                  current_version=$(cat $VERSION_FILE)
+                  IFS='.' read -r major minor patch <<< "$current_version"
+                  new_patch=$((patch + 1))
+                  new_version="$major.$minor.$new_patch"
+                  echo $new_version > $VERSION_FILE
+                  echo "VERSION=$new_version" >> $GITHUB_ENV
+                  echo "version=$new_version" >> $GITHUB_OUTPUT # <-- Outputs it for later use
+
+            # Commit Version Update
+            - name: Commit Version Update
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                  git add VERSION
+                  git commit --no-verify -m "Bump version to ${{ steps.version_bump.outputs.version }}"
+                  git push
+
+            # Setup QEMU and Buildx
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v2
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+
+            - name: Login to Docker Hub
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ secrets.DOCKER_HUB_USERNAME }}
+                  password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+            - name: Login to GitHub Container Registry
+              uses: docker/login-action@v2
+              with:
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
+
+            # Generate Environment File
+            - name: Create .env File
+              run: |
+                  echo "Generating .env file..."
+                  cat <<EOF > .env
+                  DUCKDNSTOKEN=${{ secrets.DUCKDNSTOKEN }}
+                  CONFIG_ONLY_TEST_USER_PASS=${{ secrets.CONFIG_ONLY_TEST_USER_PASS }}
+                  CONFIG_ONLY_SSL_TEST_USER1_PASS=${{ secrets.CONFIG_ONLY_SSL_TEST_USER1_PASS }}
+                  CONFIG_ONLY_SSL_TEST_USER2_PASS=${{ secrets.CONFIG_ONLY_SSL_TEST_USER2_PASS }}
+                  ENV_OVERRIDE_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_TEST_USER1_PASS }}
+                  ENV_OVERRIDE_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_TEST_USER2_PASS }}
+                  ENV_OVERRIDE_SSL_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER1_PASS }}
+                  ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
+                  EOF
+
+            # Fetch Alpine Versions
+            - name: Fetch Latest Alpine Versions
+              id: fetch_versions
+              run: |
+                  echo "Fetching latest Alpine versions..."
+                  VERSIONS=$(curl -s https://registry.hub.docker.com/v2/repositories/library/alpine/tags | jq -r '.results[].name' | grep -E '^3\.[0-9]+$' | sort -V | tail -n $MINORS_TO_KEEP)
+                  echo "ALPINE_VERSIONS=$VERSIONS" >> $GITHUB_ENV
+
+            # Build and Push Docker Images
+            - name: Build and Push Docker Images
+              run: |
+                  VERSION=${{ steps.version_bump.outputs.version }} # <-- Use output instead
+                  for ALPINE_VERSION in $ALPINE_VERSIONS; do
+                    TAG_VERSION="${VERSION}-alpine-${ALPINE_VERSION}"
+                    echo "Building and pushing image for Alpine $ALPINE_VERSION..."
+
+                    # Build and push to Docker Hub
+                    docker buildx build \
+                      --build-arg ALPINE_VERSION=$ALPINE_VERSION \
+                      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+                      --build-arg VCS_REF=$(git rev-parse --short HEAD) \
+                      --build-arg VERSION=$VERSION \
+                      --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x \
+                      --tag ${{ env.IMAGE_NAME }}:$TAG_VERSION \
+                      --tag ${{ env.IMAGE_NAME }}:${VERSION}-alpine-latest \
+                      --push .
+
+                    # Tag the repo
+                    git tag $TAG_VERSION
+                    git push origin $TAG_VERSION
+                  done

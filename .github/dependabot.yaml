@@ -1,0 +1,26 @@
+version: 2
+updates:
+    # Dockerfile Updates
+    - package-ecosystem: "docker" # Tracks Dockerfile base images
+      directory: "/" # Location of Dockerfile
+      schedule:
+          interval: "daily" # Check for updates daily (can be "weekly" or "monthly")
+      labels:
+          - "dependencies"
+      open-pull-requests-limit: 5
+
+    # GitHub Actions Updates
+    - package-ecosystem: "github-actions" # Tracks GitHub workflow dependencies
+      directory: "/" # Location of workflows
+      schedule:
+          interval: "daily"
+      labels:
+          - "dependencies"
+
+    # YAML Config File Updates
+    - package-ecosystem: "pip" # Tracks pip packages if any Python scripts are added later
+      directory: "/" # Location of requirements.txt
+      schedule:
+          interval: "weekly"
+      labels:
+          - "dependencies"
