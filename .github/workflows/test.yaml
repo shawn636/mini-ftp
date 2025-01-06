@@ -13,14 +13,6 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
-            - name: Set LOG_LEVEL Environment Variable
-              run: |
-                  if [ "$ACTIONS_STEP_DEBUG" == 'true' ]; then
-                    echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
-                  else
-                    echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
-                  fi
-
             - name: Set up QEMU
               uses: docker/setup-qemu-action@v2
 
@@ -57,4 +49,8 @@ jobs:
 
             - name: Run Tests
               run: |
-                  bash tests/run-tests.sh
+                  if [ "$ACTIONS_STEP_DEBUG" == 'true' ]; then
+                    LOG_LEVEL=debug bash tests/run-tests.sh
+                  else
+                    bash tests/run-tests.sh
+                  fi

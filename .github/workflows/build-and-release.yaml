@@ -20,14 +20,6 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
-            - name: Set LOG_LEVEL Environment Variable
-              run: |
-                  if [ "$ACTIONS_STEP_DEBUG" == 'true' ]; then
-                    echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
-                  else
-                    echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
-                  fi
-
             # Bump Version
             - name: Bump Version
               id: version_bump
