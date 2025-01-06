@@ -15,7 +15,7 @@ jobs:
 
             - name: Set LOG_LEVEL Environment Variable
               run: |
-                  if [ "${{ runner.debug }}" == '1' ]; then
+                  if [ "$ACTIONS_STEP_DEBUG" == 'true' ]; then
                     echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
                   else
                     echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
