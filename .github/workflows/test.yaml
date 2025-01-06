@@ -51,4 +51,4 @@ jobs:
               env:
                   LOG_LEVEL: ${{ vars.LOG_LEVEL }}
               run: |
-                  LOG_LEVEL=$LOG_LEVEL bash tests/run-tests.sh
+                  LOG_LEVEL=DEBUG bash tests/run-tests.sh
