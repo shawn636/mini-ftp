@@ -48,9 +48,7 @@ jobs:
                   EOF
 
             - name: Run Tests
+              env:
+                  LOG_LEVEL: ${{ vars.LOG_LEVEL }}
               run: |
-                  if [ "$ACTIONS_STEP_DEBUG" == 'true' ]; then
-                    LOG_LEVEL=debug bash tests/run-tests.sh
-                  else
-                    bash tests/run-tests.sh
-                  fi
+                  LOG_LEVEL=$LOG_LEVEL bash tests/run-tests.sh
