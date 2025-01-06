@@ -20,6 +20,14 @@ jobs:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
+            - name: Set LOG_LEVEL Environment Variable
+              run: |
+                  if [ "${{ runner.debug }}" == '1' ]; then
+                    echo "LOG_LEVEL=DEBUG" >> $GITHUB_ENV
+                  else
+                    echo "LOG_LEVEL=INFO" >> $GITHUB_ENV
+                  fi
+
             # Bump Version
             - name: Bump Version
               id: version_bump
@@ -71,12 +79,6 @@ jobs:
                   username: ${{ secrets.DOCKER_HUB_USERNAME }}
                   password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
 
-            - name: Login to GitHub Container Registry
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
-
             - name: Create .env File
               run: |
                   echo "Generating .env file..."
@@ -90,42 +92,3 @@ jobs:
                   ENV_OVERRIDE_SSL_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER1_PASS }}
                   ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
                   EOF
-
-            - name: Fetch Latest Alpine Versions
-              id: fetch_versions
-              run: |
-                  echo "Fetching latest Alpine versions..."
-                  VERSIONS=$(curl -s https://registry.hub.docker.com/v2/repositories/library/alpine/tags | jq -r '.results[].name' | grep -E '^3\.[0-9]+$' | sort -V | tail -n $MINORS_TO_KEEP)
-                  echo "ALPINE_VERSIONS=$VERSIONS" >> $GITHUB_ENV
-
-            # Cache Docker Layers
-            - name: Cache Docker Layers
-              uses: actions/cache@v3
-              with:
-                  path: /tmp/.buildx-cache
-                  key: docker-${{ runner.os }}-buildx-${{ steps.version_bump.outputs.version }}
-                  restore-keys: |
-                      docker-${{ runner.os }}-buildx-
-
-            # Build and Push Docker Images
-            - name: Build and Push Docker Images
-              run: |
-                  VERSION=${{ steps.version_bump.outputs.version }}
-                  for ALPINE_VERSION in $ALPINE_VERSIONS; do
-                    TAG_VERSION="${VERSION}-alpine-${ALPINE_VERSION}"
-                    echo "Building and pushing image for Alpine $ALPINE_VERSION..."
-
-                    docker buildx build \
-                      --build-arg ALPINE_VERSION=$ALPINE_VERSION \
-                      --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
-                      --build-arg VCS_REF=$(git rev-parse --short HEAD) \
-                      --build-arg VERSION=$VERSION \
-                      --platform linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x \
-                      --cache-from type=local,src=/tmp/.buildx-cache \
-                      --cache-to type=local,dest=/tmp/.buildx-cache,mode=max \
-                      --tag ${{ env.IMAGE_NAME }}:$TAG_VERSION \
-                      --tag ${{ env.IMAGE_NAME }}:${VERSION}-alpine-latest \
-                      --push .
-
-                    git tag $TAG_VERSION
-                    git push origin $TAG_VERSION
