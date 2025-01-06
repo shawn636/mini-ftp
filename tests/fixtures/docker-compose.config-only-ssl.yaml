@@ -1,20 +1,14 @@
 services:
-  swag:
-    image: lscr.io/linuxserver/swag:latest
-    container_name: swag
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=America/Los_Angeles # Your TZ Here
-      - URL=mini-ftp.duckdns.org # Your Domain Here
-      - VALIDATION=duckdns
-      - CERTPROVIDER=zerossl
-      - EMAIL=shawnlong636@gmail.com # Your Email Here
-    env_file:
-      - path: .env # Must contain DUCKDNSTOKEN env var if using duckdns
-        required: true
+  ssl:
+    build:
+      context: .
+      dockerfile: Dockerfile.ssl
+      args:
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+    init: true
+    restart: no
     volumes:
-      - ssl:/config/etc/letsencrypt/
+      - ssl:/ssl
   ftp:
     build:
       context: .
@@ -27,7 +21,6 @@ services:
       - "22030-22039:22030-22039"
     environment:
       - CONFIG_FILE=/etc/ftp/config-ssl.yaml
-      - LOG_LEVEL=DEBUG
     env_file:
       - path: .env
         required: true

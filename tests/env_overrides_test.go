@@ -24,8 +24,8 @@ func (suite *ConfigEnvOverrideTestSuite) SetupSuite(t *testing.T) {
 		ConfigFile:   &config,
 		UseSSL:       false,
 		Address:      "127.0.0.1",
-		Port:         2123,
-		PassivePorts: "22020-22029",
+		Port:         2125,
+		PassivePorts: "22040-22049",
 		Users: map[string]string{
 			"user1": "Y4qXtSjf2xsy",          // Env variable password override
 			"user2": "dvfMDHJfAs8U",   // Simulate another override if needed
