@@ -9,32 +9,22 @@ on:
     pull_request: # TEMPORARY: Remove this block after testing
         branches:
             - main
-        # Replace this entire block with nothing. It should look like this:
-        # on:
-        #   workflow_run:
-        #     workflows:
-        #       - Test on Pull Request and Push
-        #     types:
-        #       - completed
 
 env:
-    IMAGE_NAME: shawn636/mini-ftp
+    IMAGE_NAME: shawnlong636/mini-ftp
     MINORS_TO_KEEP: 3
 
 jobs:
     build-and-release:
         runs-on: ubuntu-latest
 
-        # TEMPORARY: Add 'github.event_name == "pull_request"' for testing; remove it later
         if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
-        # Replace this with:
-        # if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
               with:
-                  ref: ${{ github.event.pull_request.head.ref || github.ref }} # Ensure we are on the correct branch
+                  ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
             # Bump Version
             - name: Bump Version (if triggered by bot or cron)
@@ -53,68 +43,24 @@ jobs:
                   new_version="$major.$minor.$new_patch"
 
                   echo $new_version > $VERSION_FILE
-                  echo "VERSION=$new_version" >> $GITHUB_ENV
-                  echo "version=$new_version" >> $GITHUB_OUTPUT
+                  echo "Exporting VERSION=${new_version}"
+                  echo "VERSION=${new_version}" >> $GITHUB_ENV
 
-            # Commit Version Update (only if VERSION file was updated)
-            - name: Commit Version Update
-              if: steps.version_bump.outputs.version != ''
+            # Debug Version (ensure it's loaded correctly)
+            - name: Debug Version
               run: |
-                  git config --global user.name "github-actions[bot]"
-                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
-                  git add VERSION
-                  git diff --cached --exit-code || git commit --no-verify -m "Bump version to ${{ steps.version_bump.outputs.version }}"
-                  git push
+                  VERSION=$(cat VERSION)
+                  echo "VERSION is: $VERSION"
 
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v2
-
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v2
-
-            # Cache Docker Compose
-            - name: Cache Docker Compose
-              id: cache-compose
-              uses: actions/cache@v3
-              with:
-                  path: /usr/local/bin/docker-compose
-                  key: compose-${{ runner.os }}-v2.19.1
-
-            - name: Install Docker Compose (if not cached)
-              if: steps.cache-compose.outputs.cache-hit != 'true'
-              run: |
-                  sudo curl -L "https://github.com/docker/compose/releases/download/v2.19.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-                  sudo chmod +x /usr/local/bin/docker-compose
-
-            - name: Login to Docker Hub
-              uses: docker/login-action@v2
-              with:
-                  username: ${{ secrets.DOCKER_HUB_USERNAME }}
-                  password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-
-            - name: Create .env File
-              run: |
-                  echo "Generating .env file..."
-                  cat <<EOF > .env
-                  DUCKDNSTOKEN=${{ secrets.DUCKDNSTOKEN }}
-                  CONFIG_ONLY_TEST_USER_PASS=${{ secrets.CONFIG_ONLY_TEST_USER_PASS }}
-                  CONFIG_ONLY_SSL_TEST_USER1_PASS=${{ secrets.CONFIG_ONLY_SSL_TEST_USER1_PASS }}
-                  CONFIG_ONLY_SSL_TEST_USER2_PASS=${{ secrets.CONFIG_ONLY_SSL_TEST_USER2_PASS }}
-                  ENV_OVERRIDE_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_TEST_USER1_PASS }}
-                  ENV_OVERRIDE_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_TEST_USER2_PASS }}
-                  ENV_OVERRIDE_SSL_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER1_PASS }}
-                  ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
-                  EOF
-
+            # Build and Push Docker Image
             - name: Build and Push Docker Image
               run: |
-                  echo "Building image with version: ${VERSION}"
+                  VERSION=$(cat VERSION)
+                  echo "Building image with version: $VERSION"
                   docker buildx build --push \
                     --platform linux/amd64,linux/arm64 \
-                    --tag ${{ env.IMAGE_NAME }}:${{ env.VERSION }} \
+                    --tag ${{ env.IMAGE_NAME }}:$VERSION \
                     .
-              env:
-                  VERSION: ${{ env.VERSION }} # Ensure VERSION is passed as an environment variable
 
             - name: Cleanup Old Docker Images
               run: |
@@ -124,4 +70,4 @@ jobs:
                   done
 
             - name: Finalize Release
-              run: echo "Successfully released version ${{ env.VERSION }}"
+              run: echo "Successfully released version $(cat VERSION)"
