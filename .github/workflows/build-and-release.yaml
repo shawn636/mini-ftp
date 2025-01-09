@@ -11,7 +11,7 @@ on:
             - main
 
 env:
-    IMAGE_NAME: shawnlong636/mini-ftp
+    IMAGE_NAME: shawn636/mini-ftp
     MINORS_TO_KEEP: 3
 
 jobs:
