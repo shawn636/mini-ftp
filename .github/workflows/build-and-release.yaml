@@ -1,12 +1,21 @@
 name: Build, Push, and Release
 
 on:
-    push:
+    workflow_run:
+        workflows:
+            - Test on Pull Request and Push
+        types:
+            - completed
+    pull_request: # TEMPORARY: Remove this block after testing
         branches:
             - main
-    schedule:
-        - cron: "0 0 * * 1" # Weekly build
-    workflow_dispatch: # Manual trigger
+        # Replace this entire block with nothing. It should look like this:
+        # on:
+        #   workflow_run:
+        #     workflows:
+        #       - Test on Pull Request and Push
+        #     types:
+        #       - completed
 
 env:
     IMAGE_NAME: shawnlong636/mini-ftp
@@ -16,13 +25,19 @@ jobs:
     build-and-release:
         runs-on: ubuntu-latest
 
+        # TEMPORARY: Add 'github.event_name == "pull_request"' for testing; remove it later
+        if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
+        # Replace this with:
+        # if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
 
             # Bump Version
-            - name: Bump Version
+            - name: Bump Version (if triggered by bot or cron)
               id: version_bump
+              if: ${{ github.actor == 'dependabot[bot]' || github.event_name == 'schedule' }}
               run: |
                   VERSION_FILE="VERSION"
                   if [ ! -f "$VERSION_FILE" ]; then
@@ -30,8 +45,11 @@ jobs:
                   fi
                   current_version=$(cat $VERSION_FILE)
                   IFS='.' read -r major minor patch <<< "$current_version"
+
+                  # Default to patch bump
                   new_patch=$((patch + 1))
                   new_version="$major.$minor.$new_patch"
+
                   echo $new_version > $VERSION_FILE
                   echo "VERSION=$new_version" >> $GITHUB_ENV
                   echo "version=$new_version" >> $GITHUB_OUTPUT
@@ -84,3 +102,20 @@ jobs:
                   ENV_OVERRIDE_SSL_TEST_USER1_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER1_PASS }}
                   ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
                   EOF
+
+            - name: Build and Push Docker Image
+              run: |
+                  docker buildx build --push \
+                    --platform linux/amd64,linux/arm64 \
+                    --tag ${{ env.IMAGE_NAME }}:${{ env.VERSION }} \
+                    .
+
+            - name: Cleanup Old Docker Images
+              run: |
+                  old_versions=$(docker images ${{ env.IMAGE_NAME }} --format '{{.Tag}}' | sort -r | tail -n +${{ env.MINORS_TO_KEEP }})
+                  for version in $old_versions; do
+                      docker rmi ${{ env.IMAGE_NAME }}:$version || true
+                  done
+
+            - name: Finalize Release
+              run: echo "Successfully released version ${{ env.VERSION }}"
