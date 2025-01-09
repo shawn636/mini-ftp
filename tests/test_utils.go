@@ -87,7 +87,8 @@ func setupTestEnv(t *testing.T, opts TestOptions) string {
 	}
 
 	cmd := exec.Command(
-		"docker-compose",
+		"docker",
+		"compose",
 		"--project-name", projectName,
 		"up", "--build", "-d", "--wait",
 	)
@@ -97,7 +98,7 @@ func setupTestEnv(t *testing.T, opts TestOptions) string {
 	// Capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Logf("Error during 'docker-compose up':\n%s", string(output))
+		t.Logf("Error during 'docker compose up':\n%s", string(output))
 		t.Fatalf("Failed to start Docker Compose: %v", err)
 	}
 
@@ -119,7 +120,8 @@ func teardownTestEnv(t *testing.T, tmpDirAndProject string) {
 	if os.Getenv("LOG_LEVEL") == "DEBUG" {
 		// Fetch logs for all containers in the project
 		cmd := exec.Command(
-			"docker-compose",
+			"docker",
+			"compose",
 			"--project-name", projectName,
 			"logs",
 		)
@@ -131,7 +133,8 @@ func teardownTestEnv(t *testing.T, tmpDirAndProject string) {
 
 	// Tear down Docker Compose stack completely
 	cmd := exec.Command(
-		"docker-compose",
+		"docker",
+		"compose",
 		"--project-name", projectName,
 		"down", "--volumes", "--rmi", "all",
 	)
