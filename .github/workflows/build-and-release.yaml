@@ -33,6 +33,8 @@ jobs:
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ github.event.pull_request.head.ref || github.ref }} # Ensure we are on the correct branch
 
             # Bump Version
             - name: Bump Version (if triggered by bot or cron)
@@ -54,13 +56,14 @@ jobs:
                   echo "VERSION=$new_version" >> $GITHUB_ENV
                   echo "version=$new_version" >> $GITHUB_OUTPUT
 
-            # Commit Version Update
+            # Commit Version Update (only if VERSION file was updated)
             - name: Commit Version Update
+              if: steps.version_bump.outputs.version != ''
               run: |
                   git config --global user.name "github-actions[bot]"
                   git config --global user.email "github-actions[bot]@users.noreply.github.com"
                   git add VERSION
-                  git commit --no-verify -m "Bump version to ${{ steps.version_bump.outputs.version }}"
+                  git diff --cached --exit-code || git commit --no-verify -m "Bump version to ${{ steps.version_bump.outputs.version }}"
                   git push
 
             - name: Set up QEMU
