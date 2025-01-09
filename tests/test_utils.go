@@ -94,7 +94,14 @@ func setupTestEnv(t *testing.T, opts TestOptions) string {
 	cmd.Dir = tmpDir
 	cmd.Env = append(os.Environ(), envVars...)
 
-	require.NoError(t, cmd.Run(), "Failed to start Docker Compose")
+	// Capture output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Error during 'docker-compose up':\n%s", string(output))
+		t.Fatalf("Failed to start Docker Compose: %v", err)
+	}
+
+	// require.NoError(t, cmd.Run(), "Failed to start Docker Compose")
 
 	containerName := projectName + "-ftp-1"
 	verifyAlpineVersion(t, containerName, alpineVersion)
