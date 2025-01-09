@@ -89,7 +89,7 @@ for VERSION in "${VERSIONS[@]}"; do
 
   # Run Go tests and catch any failure
   printf "%s %sRunning tests...%s\n" "$TEST_TUBE" "$CYAN" "$NC"
-  if ! go test -p 4 -v ./...; then
+  if ! go test -v ./...; then
     SUCCESS=false
     printf "%s %sTests failed for Alpine version: %s%s\n" "$CROSSMARK" "$RED" "$VERSION" "$NC"
     break

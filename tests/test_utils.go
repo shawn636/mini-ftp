@@ -342,6 +342,8 @@ func fetchLatestAlpineVersion(t *testing.T) string {
 	// Check that at least one release was found
 	require.NotEmpty(t, releases, "No releases found in metadata")
 
-	// Return the version from the first entry (all entries have the same version)
-	return releases[0].Version
+	// Extract and return only the major and minor version (e.g., "3.14" from "3.14.2")
+	versionParts := strings.Split(releases[0].Version, ".")
+	require.True(t, len(versionParts) >= 2, "Invalid version format in metadata")
+	return fmt.Sprintf("%s.%s", versionParts[0], versionParts[1])
 }
