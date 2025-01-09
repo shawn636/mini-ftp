@@ -24,6 +24,28 @@ jobs:
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v2
 
+            # Cache Alpine Base Images
+            - name: Cache Docker Base Images
+              id: cache-docker-images
+              uses: actions/cache@v3
+              with:
+                  path: /tmp/.buildx-cache
+                  key: docker-base-images-${{ runner.os }}-${{ hashFiles('Dockerfile') }}
+                  restore-keys: |
+                      docker-base-images-${{ runner.os }}-
+
+            # Pre-fetch Alpine Base Images
+            - name: Preload Base Images
+              if: steps.cache-docker-images.outputs.cache-hit != 'true'
+              run: |
+                  docker pull alpine:3.19
+                  docker pull alpine:3.20
+                  docker pull alpine:3.21
+                  docker pull alpine:latest
+
+            - name: Install Docker Compose
+              uses: docker/setup-buildx-action@v2
+
             # Cache Docker Compose
             - name: Cache Docker Compose
               id: cache-compose
