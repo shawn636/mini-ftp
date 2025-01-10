@@ -75,6 +75,7 @@ jobs:
 
                   # Build and push the default version (alpine:latest)
                   docker buildx build --push \
+                      --progress plain \
                       --platform $PLATFORMS \
                       --tag ${{ env.IMAGE_NAME }}:$VERSION \
                       --tag ${{ env.IMAGE_NAME }}:$VERSION-alpine-$ALPINE_LATEST \
@@ -84,6 +85,7 @@ jobs:
                   for version in "${ALPINE_VERSIONS[@]}"; do
                       TAG_SUFFIX="alpine-$version"
                       docker buildx build --push \
+                          --progress plain \
                           --platform $PLATFORMS \
                           --tag ${{ env.IMAGE_NAME }}:$VERSION-$TAG_SUFFIX \
                           --build-arg ALPINE_VERSION=$version .
