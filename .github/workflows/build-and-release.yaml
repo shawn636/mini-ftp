@@ -68,11 +68,14 @@ jobs:
                   ALPINE_LATEST="latest"
                   ALPINE_VERSIONS=("3.21" "3.20" "3.19")
 
+                  # Platforms for cross-build
+                  PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x"
+
                   echo "Building and pushing images for version: $VERSION"
 
                   # Build and push the default version (alpine:latest)
                   docker buildx build --push \
-                      --platform linux/amd64,linux/arm64 \
+                      --platform $PLATFORMS \
                       --tag ${{ env.IMAGE_NAME }}:$VERSION \
                       --tag ${{ env.IMAGE_NAME }}:$VERSION-alpine-$ALPINE_LATEST \
                       --build-arg ALPINE_VERSION=$ALPINE_LATEST .
@@ -81,7 +84,7 @@ jobs:
                   for version in "${ALPINE_VERSIONS[@]}"; do
                       TAG_SUFFIX="alpine-$version"
                       docker buildx build --push \
-                          --platform linux/amd64,linux/arm64 \
+                          --platform $PLATFORMS \
                           --tag ${{ env.IMAGE_NAME }}:$VERSION-$TAG_SUFFIX \
                           --build-arg ALPINE_VERSION=$version .
                   done
