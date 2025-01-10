@@ -1,0 +1,5 @@
+users:
+    - username: user1
+      password_env: USER1_PASS
+    - username: user2
+      password_env: USER2_PASS

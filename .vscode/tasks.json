@@ -30,6 +30,21 @@
             },
             "problemMatcher": [],
             "detail": "Run tests with multiple Alpine versions (3.19, 3.20, 3.21, latest) using the run-tests.sh script"
+        },
+        {
+            "label": "Version Bump",
+            "type": "shell",
+            "command": "bash bump_version.sh",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "icon": {
+                "id": "edit",
+                "color": "terminal.ansiYellow"
+            },
+            "problemMatcher": [],
+            "detail": "Interactively bump the version (major, minor, or patch) using the bump-version.sh script"
         }
     ]
 }

@@ -1,0 +1,19 @@
+services:
+  ftp:
+    image: shawn636/mini-ftp:latest
+    container_name: pi-ftp
+    # Specify platform for Raspberry Pi
+    platform: linux/arm/v7
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      - FTP_USER=pi-user
+      - FTP_PASS=pi-password
+      - MIN_PORT=21000
+      - MAX_PORT=21010
+      - ADDRESS=192.168.1.100 # Replace with your Pi's IP address
+    volumes:
+      # If using external storage, replace /path/to/ftp-data with the path to your storage
+      # i.e. /mnt/usb-drive/ftp-data:/ftp
+      - /path/to/ftp-data:/ftp

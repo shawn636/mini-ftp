@@ -1,0 +1,10 @@
+server:
+    min_port: 21000
+    max_port: 21010
+    address: 123.123.123.123 # Replace with your server's public IP address
+
+users:
+    - username: user1
+      password_env: USER1_PASS
+    - username: user2
+      password_env: USER2_PASS

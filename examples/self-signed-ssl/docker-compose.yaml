@@ -2,7 +2,7 @@ services:
   ssl:
     build:
       context: .
-      dockerfile: Dockerfile.ssl
+      dockerfile: Dockerfile
       args:
         ALPINE_VERSION: ${ALPINE_VERSION:-latest}
     init: true
@@ -15,17 +15,20 @@ services:
       dockerfile: Dockerfile
       args:
         ALPINE_VERSION: ${ALPINE_VERSION:-latest}
-
     ports:
-      - "2124:21"
-      - "22030-22039:22030-22039"
+      - "21:21"
+      - "21000-21010:21000-21010"
     environment:
-      - CONFIG_FILE=/etc/ftp/config-ssl.yaml
-    env_file:
-      - path: .env
-        required: true
+      - FTP_USER=your-user
+      - FTP_PASS=your-password
+      - MIN_PORT=21000
+      - MAX_PORT=21010
+      - ADDRESS=123.123.123.132 # Your Public IP Address Here
+      - TLS_CERT=/ssl/fullchain.pem
+      - TLS_KEY=/ssl/privkey.pem
     volumes:
-      - ./config-ssl.yaml:/etc/ftp/config-ssl.yaml
+      - ftp:/ftp
       - ssl:/ssl
 volumes:
   ssl:
+  ftp:

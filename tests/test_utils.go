@@ -63,6 +63,8 @@ func setupTestEnv(t *testing.T, opts TestOptions) string {
 	// SSL-specific configuration
 	if opts.UseSSL || opts.ConfigFile != nil {
 		copyFiles(t, projectRoot, tmpDir, []string{".env"})
+		copyFiles(t, filepath.Join(projectRoot, "tests/fixtures"), tmpDir, []string{"Dockerfile.ssl"})
+		copyFiles(t, filepath.Join(projectRoot, "tests/fixtures"), tmpDir, []string{"generate-cert.sh"})
 	}
 
 	srcCompose := filepath.Join(projectRoot, "tests/fixtures", opts.ComposeFile)
@@ -85,14 +87,22 @@ func setupTestEnv(t *testing.T, opts TestOptions) string {
 	}
 
 	cmd := exec.Command(
-		"docker-compose",
+		"docker",
+		"compose",
 		"--project-name", projectName,
 		"up", "--build", "-d", "--wait",
 	)
 	cmd.Dir = tmpDir
 	cmd.Env = append(os.Environ(), envVars...)
 
-	require.NoError(t, cmd.Run(), "Failed to start Docker Compose")
+	// Capture output
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Error during 'docker compose up':\n%s", string(output))
+		t.Fatalf("Failed to start Docker Compose: %v", err)
+	}
+
+	// require.NoError(t, cmd.Run(), "Failed to start Docker Compose")
 
 	containerName := projectName + "-ftp-1"
 	verifyAlpineVersion(t, containerName, alpineVersion)
@@ -106,9 +116,25 @@ func teardownTestEnv(t *testing.T, tmpDirAndProject string) {
 	tmpDir := parts[0]
 	projectName := parts[1]
 
+	// Check if logs should be printed
+	if os.Getenv("LOG_LEVEL") == "DEBUG" {
+		// Fetch logs for all containers in the project
+		cmd := exec.Command(
+			"docker",
+			"compose",
+			"--project-name", projectName,
+			"logs",
+		)
+		cmd.Dir = tmpDir
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		_ = cmd.Run() // Print logs but continue even if this command fails
+	}
+
 	// Tear down Docker Compose stack completely
 	cmd := exec.Command(
-		"docker-compose",
+		"docker",
+		"compose",
 		"--project-name", projectName,
 		"down", "--volumes", "--rmi", "all",
 	)
@@ -140,8 +166,9 @@ func SetupScriptTestEnv(t *testing.T) ScriptTestEnv {
 	imageName := "script-test-image-" + filepath.Base(tmpDir)
 	containerName := "script-test-container-" + filepath.Base(tmpDir)
 
-	// Build the Docker image (suppress output)
-	cmd := exec.Command("docker", "build", "-t", imageName, ".")
+	// Build the Docker image with ALPINE_VERSION as a build argument (suppress output)
+	alpineVersion := os.Getenv("ALPINE_VERSION")
+	cmd := exec.Command("docker", "build", "--build-arg", fmt.Sprintf("ALPINE_VERSION=%s", alpineVersion), "-t", imageName, ".")
 	cmd.Dir = tmpDir
 	cmd.Stdout = nil // Suppress standard output
 	cmd.Stderr = nil // Suppress standard error
@@ -152,8 +179,6 @@ func SetupScriptTestEnv(t *testing.T) ScriptTestEnv {
 	cmd.Stdout = nil // Suppress standard output
 	cmd.Stderr = nil // Suppress standard error
 	require.NoError(t, cmd.Run(), "Failed to start Docker container")
-
-	alpineVersion := os.Getenv("ALPINE_VERSION")
 
 	if alpineVersion == "" {
 		alpineVersion = "latest"
@@ -180,6 +205,15 @@ func SetupScriptTestEnv(t *testing.T) ScriptTestEnv {
 
 // TeardownScriptTestEnv shuts down the container and removes related resources
 func TeardownScriptTestEnv(t *testing.T, env ScriptTestEnv) {
+	// Check if logs should be printed
+	if os.Getenv("LOG_LEVEL") == "DEBUG" {
+		// Fetch logs for the container
+		cmd := exec.Command("docker", "logs", env.ContainerName)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		_ = cmd.Run() // Print logs but continue even if this command fails
+	}
+
 	// Stop and remove the container
 	cmd := exec.Command("docker", "rm", "-f", env.ContainerName)
 	cmd.Stdout = os.Stdout
@@ -188,8 +222,8 @@ func TeardownScriptTestEnv(t *testing.T, env ScriptTestEnv) {
 
 	// Remove the Docker image
 	cmd = exec.Command("docker", "rmi", "-f", env.ImageName)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = nil // Suppress standard output
+	cmd.Stderr = nil // Suppress standard error
 	require.NoError(t, cmd.Run(), "Failed to remove Docker image")
 
 	// Remove the temporary directory
@@ -291,7 +325,7 @@ func verifyAlpineVersion(t *testing.T, containerName, expectedVersion string) {
     }
 
     // Compare the actual version with the expected version
-    require.Equal(t, expectedVersion, actualVersion, "Alpine version mismatch: expected %s, got %s", expectedVersion, actualVersion)
+	require.True(t, strings.HasPrefix(actualVersion, expectedVersion), "Alpine version mismatch: expected prefix %s, got %s", expectedVersion, actualVersion)
 }
 
 type AlpineRelease struct {
@@ -318,6 +352,8 @@ func fetchLatestAlpineVersion(t *testing.T) string {
 	// Check that at least one release was found
 	require.NotEmpty(t, releases, "No releases found in metadata")
 
-	// Return the version from the first entry (all entries have the same version)
-	return releases[0].Version
+	// Extract and return only the major and minor version (e.g., "3.14" from "3.14.2")
+	versionParts := strings.Split(releases[0].Version, ".")
+	require.True(t, len(versionParts) >= 2, "Invalid version format in metadata")
+	return fmt.Sprintf("%s.%s", versionParts[0], versionParts[1])
 }

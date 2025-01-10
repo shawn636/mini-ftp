@@ -46,11 +46,6 @@ RUN for f in /bin/*.sh; do \
     mv "$f" "bin/$(basename "$f" .sh)"; \
     done
 
-
-# Copy the FTP startup script and configuration file
-# COPY start_vsftpd.sh /bin/start_vsftpd.sh
-# COPY vsftpd.conf /etc/vsftpd/vsftpd.conf
-
 # Set permissions for the startup script and FTP root directory
 RUN mkdir -p /ftp \
     && chmod 755 /ftp

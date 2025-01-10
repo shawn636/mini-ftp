@@ -1,0 +1,16 @@
+# This Dockerfile is used for generating SSL Certificates in testing only
+# In production, you should use a trusted Certificate Authority to generate your SSL Certificates
+# and not use self-signed certificates like this example
+
+ARG ALPINE_VERSION
+FROM alpine:${ALPINE_VERSION:-latest}
+
+# Install OpenSSL
+RUN apk add --no-cache openssl
+
+# Create a script for generating certs
+COPY generate-cert.sh /usr/local/bin/generate-cert.sh
+RUN chmod +x /usr/local/bin/generate-cert.sh
+
+# Default entrypoint
+ENTRYPOINT ["/usr/local/bin/generate-cert.sh"]
