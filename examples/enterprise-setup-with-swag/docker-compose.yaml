@@ -1,0 +1,36 @@
+services:
+  swag:
+    image: lscr.io/linuxserver/swag:latest
+    container_name: swag
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Los_Angeles
+      - URL=your-domain.com
+      - VALIDATION=http
+      - CERTPROVIDER=letsencrypt
+      - EMAIL=email@your-domain.com
+    env_file:
+      - .env
+    volumes:
+      - swag-config:/config
+  ftp:
+    image: shawn636/mini-ftp:latest
+    container_name: ftp
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      - CONFIG_FILE=/etc/ftp/config.yaml
+      - TLS_CERT=/config/etc/letsencrypt/live/your-domain.com/fullchain.pem
+      - TLS_KEY=/config/etc/letsencrypt/live/your-domain.com/privkey.pem
+      - ADDRESS=example.duckdns.org
+      - MIN_PORT=21000
+      - MAX_PORT=21010
+    volumes:
+      - ./config.yaml:/etc/ftp/config.yaml
+      - ftp-data:/ftp
+      - swag-config:/config
+volumes:
+  swag-config:
+  ftp-data:

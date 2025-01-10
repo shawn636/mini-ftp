@@ -1,0 +1,34 @@
+services:
+  ssl:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+    init: true
+    restart: no
+    volumes:
+      - ssl:/ssl
+  ftp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        ALPINE_VERSION: ${ALPINE_VERSION:-latest}
+    ports:
+      - "21:21"
+      - "21000-21010:21000-21010"
+    environment:
+      - FTP_USER=your-user
+      - FTP_PASS=your-password
+      - MIN_PORT=21000
+      - MAX_PORT=21010
+      - ADDRESS=123.123.123.132 # Your Public IP Address Here
+      - TLS_CERT=/ssl/fullchain.pem
+      - TLS_KEY=/ssl/privkey.pem
+    volumes:
+      - ftp:/ftp
+      - ssl:/ssl
+volumes:
+  ssl:
+  ftp:
