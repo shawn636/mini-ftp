@@ -2,11 +2,13 @@
 
 [![Docker Stars](https://img.shields.io/docker/stars/shawn636/mini-ftp.svg)](https://hub.docker.com/r/delfer/alpine-ftp-server/) [![Docker Pulls](https://img.shields.io/docker/pulls/shawn636/mini-ftp.svg)](https://hub.docker.com/r/shawn636/mini-ftp.svg)  [![Tests](https://github.com/shawn636/mini-ftp/actions/workflows/test.yaml/badge.svg)](https://github.com/shawn636/mini-ftp/actions/workflows/test.yaml) [![Automated Builds](https://github.com/shawn636/mini-ftp/actions/workflows/build-and-release.yaml/badge.svg)](https://github.com/shawn636/mini-ftp/actions/workflows/build-and-release.yaml)
 
-Small and flexible docker image with vsftpd server
-
 # mini-ftp
 
 A lightweight FTP server with support for YAML-based configuration and secure password handling.
+
+What began as a simple extension of [Alexander Chumakov](https://github.com/delfer)'s [docker-alpine-ftp-server](https://github.com/delfer/docker-alpine-ftp-server) has grown into a more portable and configurable ftp server that's docker based. While this was originally created as a lightweight FTP server for integration tests with FTP functions, it's configurable enough to be an easy-setup FTP server that you can just set-and-forget.
+
+Future support will be added so that administrators can add or remove users via script at runtime, although this *techncially* can still be done as-is, using the standard methods with vsftp.
 
 
 
