@@ -33,23 +33,9 @@ FROM $BASE_IMG
 COPY --from=pidproxy /usr/bin/pidproxy /usr/bin/pidproxy
 
 # Install runtime dependencies
-RUN apk --no-cache add vsftpd tini bash shadow jq curl
-
-# Install yq
-# Install yq dynamically based on architecture
-RUN arch=$(uname -m) \
-    && case "$arch" in \
-    x86_64)   yq_arch="yq_linux_amd64";; \
-    aarch64)  yq_arch="yq_linux_arm64";; \
-    armv7l)   yq_arch="yq_linux_arm";; \
-    *)        echo "Unsupported architecture: $arch"; exit 1;; \
-    esac \
-    && curl -sL https://github.com/mikefarah/yq/releases/latest/download/$yq_arch -o /usr/bin/yq \
-    && chmod +x /usr/bin/yq \
-    # Verify yq version is at least 4.44.0
-    && yq_version=$(yq --version | awk '{print $3}') \
-    && min_version="4.44.0" \
-    && [ "$(printf '%s\n' "$min_version" "$yq_version" | sort -V | head -n1)" = "$min_version" ] || { echo "yq version must be >= 4.44.0. Found $yq_version"; exit 1; }
+RUN apk --no-cache add vsftpd tini bash shadow jq curl \
+    && curl -sL $(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r '.assets[] | select(.name | contains("linux_amd64")) | .browser_download_url') -o /usr/bin/yq \
+    && chmod +x /usr/bin/yq
 
 COPY config/vsftpd.conf /etc/vsftpd/vsftpd.conf
 
