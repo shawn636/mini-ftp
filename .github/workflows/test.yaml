@@ -42,7 +42,7 @@ jobs:
             # Cache Alpine Base Images
             - name: Cache Docker Base Images
               id: cache-docker-images
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
                   path: /tmp/.buildx-cache
                   key: docker-base-images-${{ matrix.arch }}-${{ runner.os }}-${{ hashFiles('Dockerfile') }}
@@ -64,7 +64,7 @@ jobs:
             # Cache Docker Compose
             - name: Cache Docker Compose
               id: cache-compose
-              uses: actions/cache@v3
+              uses: actions/cache@v4
               with:
                   path: /usr/local/bin/docker-compose
                   key: compose-${{ runner.os }}-v2.19.1
