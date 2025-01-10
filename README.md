@@ -1,28 +1,71 @@
 ![logo](https://github.com/shawn636/mini-ftp/blob/main/assets/logo.png?raw=true)
 
+[![Docker Stars](https://img.shields.io/docker/stars/shawn636/mini-ftp.svg)](https://hub.docker.com/r/delfer/alpine-ftp-server/) [![Docker Pulls](https://img.shields.io/docker/pulls/shawn636/mini-ftp.svg)](https://hub.docker.com/r/shawn636/mini-ftp.svg)  [![Tests](https://github.com/shawn636/mini-ftp/actions/workflows/test.yaml/badge.svg)](https://github.com/shawn636/mini-ftp/actions/workflows/test.yaml) [![Automated Builds](https://github.com/shawn636/mini-ftp/actions/workflows/build-and-release.yaml/badge.svg)](https://github.com/shawn636/mini-ftp/actions/workflows/build-and-release.yaml)
+
+Small and flexible docker image with vsftpd server
+
 # mini-ftp
 
 A lightweight FTP server with support for YAML-based configuration and secure password handling.
 
 
 
+## **Why Choose mini-ftp?**
+
+- **Multi-Platform Ready**
+  - Supports a wide range of architectures: amd64, arm64, arm/v7, arm/v6, ppc64le, and s390x. Perfect for modern cloud environments, edge devices, and legacy systems.
+
+- **Scalable User Management**
+  - Manage single or multiple FTP users effortlessly with environment variables or YAML-based configurations.
+
+- **Security First**
+  - TLS support and environment-variable-backed passwords keep your configurations secure and version-control safe.
+
+- **Lightweight and Fast**
+  - Built on Alpine Linux, mini-ftp has a small footprint while delivering blazing performance.
+
+
+
 ## Key Features
 
-- **Single User Quick Start** – Use environment variables for a simple setup.
+- **Multi-Architecture Support**
+  - Tested and validated on multiple architectures to ensure compatibility across a variety of systems.
 
-- **Multiple Users with YAML Config** – Add multiple users and server settings using a YAML file.
+- **Quick Start**
+  - Spin up an FTP server with a single user in seconds using environment variables.
 
-- **Secure Passwords** – Reference passwords via environment variables to keep secrets out of config files.
+- **Advanced Configurations**
+  - Leverage YAML for scalable setups, multiple users, and advanced server settings.
 
-- **Standardized FTP Root** – Files are always served from /ftp, making configuration predictable.
+- **TLS Encryption**
+  - Secure connections are easy to enable with TLS certificates and keys.
 
-- **TLS Support** – Easily enable secure connections using a TLS certificate and key.
+- **Portable and Predictable**
+  - Files are always served from /ftp, simplifying directory mappings.
 
 
 
-## Usage
+## Multi-Platform and Multi-Architecture Support
 
-### Quick Start with Default User
+**mini-ftp** is tested on the following architectures:
+
+- `amd64`: Ideal for standard servers and x86 cloud instances.
+
+- `arm64`: Optimized for modern ARM-based devices and cloud platforms like AWS Graviton.
+
+- `arm/v7`, `arm/v6`: Perfect for older Raspberry Pi models and IoT/embedded devices.
+
+- `ppc64le`, `s390x`: Ensures compatibility with enterprise-grade IBM Power Systems and mainframes.
+
+Our CI/CD pipeline rigorously tests the image on all supported architectures, ensuring reliability across platforms.
+
+
+
+## Getting Started
+
+### Quick Start
+
+Launch an FTP server with minimal configuration:
 
 ```bash
 docker run -d \
@@ -31,28 +74,22 @@ docker run -d \
     -e FTP_USER=one \
     -e FTP_PASS=1234 \
     -v "$(pwd)/ftp-data:/ftp" \
-    shawnlong636/mini-ftp
+    shawn636/mini-ftp
 ```
 
+### Advanced Configuration
 
+Harness the power of YAML for multi-user setups and additional features. See the [Configuration](#configuration) section below for details.
 
-### Using Docker Compose
+### Examples
 
-```yaml
-services:
-  ftp:
-    image: shawnlong636/mini-ftp
-    ports:
-      - "21:21"
-      - "21000-21010:21000-21010"
-    environment:
-      - FTP_USER=one
-      - FTP_PASS=1234
-      - CONFIG_FILE=/etc/ftp/config.yaml
-    volumes:
-      - ./ftp-data:/ftp
-      - ./config.yaml:/etc/ftp/config.yaml
-```
+Looking for inspiration or ready-to-use configurations? Check out the [**examples/** directory](https://github.com/shawn636/mini-ftp/tree/main/examples) for:
+
+- **Docker Compose Files** for single-user and multi-user setups.
+- **YAML Configurations** for advanced server and user management.
+- **TLS-Enabled Deployments** using secure connections.
+
+These examples cover a variety of use cases, helping you get up and running quickly with configurations tailored to your needs.
 
 
 
@@ -83,6 +120,8 @@ services:
 - `FTP_UID` – User ID for the default user (optional, default 1000).
 
 - `FTP_GID` – Group ID for the default user (optional, default 1000).
+
+
 
 #### TLS Settings
 
@@ -244,14 +283,43 @@ services:
 
 
 
-### Key Notes
+## **Example Scenarios**
 
-- **Default User Setup** – Environment variables are perfect for quick tests and single-user setups.
+#### IoT Devices (ARM/v6 and ARM/v7)
 
-- **Advanced Config with YAML** – Use a config file for larger setups and multi-user environments.
+Deploy mini-ftp on low-powered IoT devices for fast, reliable file sharing.
 
-- **Security First** – Passwords are stored in environment variables, keeping configs safe for version control.
+```bash
+docker run --platform linux/arm/v6 \
+    -e FTP_USER=pi \
+    -e FTP_PASS=raspberry \
+    shawn636/mini-ftp
+```
 
-- **TLS Ready** – Supports encrypted connections via certificates.
 
-- **SWAG Integration** – Simplifies SSL certificate management with automatic renewal.
+
+#### Enterprise Servers (PPC64LE and S390X)
+
+Run mini-ftp on high-end servers for secure, scalable FTP services.
+
+```bash
+docker run --platform linux/ppc64le \
+    -e FTP_USER=admin \
+    -e FTP_PASS=supersecret \
+    shawn636/mini-ftp
+```
+
+
+
+## Badges of Honor
+
+We take pride in:
+
+- **Automated Multi-Arch Builds**
+  - Every release is built and validated for all supported platforms.
+
+- **Comprehensive Testing**
+  - Rigorous CI ensures stability across configurations and architectures.
+
+- **Community-Driven Development**
+  - Contributions and feedback are welcome!

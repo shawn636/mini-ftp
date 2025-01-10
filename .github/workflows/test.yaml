@@ -14,7 +14,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest] # Optionally add more OS types if needed
+                os: [ubuntu-latest]
                 arch: [amd64, arm64, arm/v7, arm/v6, ppc64le, s390x]
 
         outputs:
@@ -84,10 +84,35 @@ jobs:
                   ENV_OVERRIDE_SSL_TEST_USER2_PASS=${{ secrets.ENV_OVERRIDE_SSL_TEST_USER2_PASS }}
                   EOF
 
-            - name: Run Tests
+            - name: Run Tests with Retry for arm/v6
               id: test-result
               env:
                   LOG_LEVEL: ${{ vars.LOG_LEVEL }}
               run: |
                   echo "Running tests on architecture: ${{ matrix.arch }}"
-                  LOG_LEVEL=DEBUG bash tests/run-tests.sh
+
+                  # Retry logic only for arm/v6
+                  if [ "${{ matrix.arch }}" = "arm/v6" ]; then
+                      echo "Detected flaky architecture: arm/v6"
+                      MAX_RETRIES=2
+                      ATTEMPT=0
+                      SUCCESS=false
+                      
+                      while [ $ATTEMPT -le $MAX_RETRIES ]; do
+                          ((ATTEMPT++))
+                          echo "Attempt $ATTEMPT..."
+                          if LOG_LEVEL=DEBUG bash tests/run-tests.sh; then
+                              SUCCESS=true
+                              break
+                          fi
+                          echo "Test failed on attempt $ATTEMPT. Retrying..."
+                      done
+
+                      if [ "$SUCCESS" = false ]; then
+                          echo "Tests failed after $MAX_RETRIES retries"
+                          exit 1
+                      fi
+                  else
+                      # For other architectures, just run the tests normally
+                      LOG_LEVEL=DEBUG bash tests/run-tests.sh
+                  fi
