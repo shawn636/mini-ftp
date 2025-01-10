@@ -10,6 +10,10 @@ on:
 env:
     IMAGE_NAME: shawn636/mini-ftp
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref_name }}
+    cancel-in-progress: true
+
 jobs:
     build-and-release:
         runs-on: ubuntu-latest

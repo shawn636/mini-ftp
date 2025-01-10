@@ -8,6 +8,10 @@ on:
         branches:
             - main
 
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref_name }}
+    cancel-in-progress: true
+
 jobs:
     test:
         runs-on: ubuntu-latest
@@ -91,29 +95,4 @@ jobs:
                   LOG_LEVEL: ${{ vars.LOG_LEVEL }}
               run: |
                   echo "Running tests on architecture: ${{ matrix.arch }}"
-
-                  # Retry logic only for arm/v6
-                  if [ "${{ matrix.arch }}" = "arm/v6" ]; then
-                      echo "Detected flaky architecture: arm/v6"
-                      MAX_RETRIES=2
-                      ATTEMPT=0
-                      SUCCESS=false
-                      
-                      while [ $ATTEMPT -le $MAX_RETRIES ]; do
-                          ((ATTEMPT++))
-                          echo "Attempt $ATTEMPT..."
-                          if LOG_LEVEL=DEBUG bash tests/run-tests.sh; then
-                              SUCCESS=true
-                              break
-                          fi
-                          echo "Test failed on attempt $ATTEMPT. Retrying..."
-                      done
-
-                      if [ "$SUCCESS" = false ]; then
-                          echo "Tests failed after $MAX_RETRIES retries"
-                          exit 1
-                      fi
-                  else
-                      # For other architectures, just run the tests normally
-                      LOG_LEVEL=DEBUG bash tests/run-tests.sh
-                  fi
+                  LOG_LEVEL=DEBUG bash tests/run-tests.sh
