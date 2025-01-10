@@ -3,12 +3,9 @@ name: Build, Push, and Release
 on:
     workflow_run:
         workflows:
-            - Test on Pull Request and Push
+            - Test
         types:
             - completed
-    pull_request: # TEMPORARY: Remove this block after testing
-        branches:
-            - main
 
 env:
     IMAGE_NAME: shawn636/mini-ftp
@@ -17,13 +14,11 @@ jobs:
     build-and-release:
         runs-on: ubuntu-latest
 
-        if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'pull_request' }}
+        if: ${{ github.event.workflow_run.conclusion == 'success' && github.ref == 'refs/heads/main' }}
 
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v4
-              with:
-                  ref: ${{ github.event.pull_request.head.ref || github.ref }}
 
             # Bump Version
             - name: Bump Version (if triggered by bot or cron)
@@ -67,8 +62,6 @@ jobs:
                   VERSION=$(cat VERSION)
                   ALPINE_LATEST="latest"
                   ALPINE_VERSIONS=("3.21" "3.20" "3.19")
-
-                  # Platforms for cross-build
                   PLATFORMS="linux/amd64,linux/arm64,linux/arm/v7,linux/arm/v6,linux/ppc64le,linux/s390x"
 
                   echo "Building and pushing images for version: $VERSION"
